@@ -1,0 +1,21 @@
+#! /usr/bin/env perl
+use v5.36;
+use Path::Tiny;
+
+my @filter_files = path( qw( / usr local etc tinyproxy filters ) ) -> children;
+my $tinyproxy_filter_file = path( qw( / usr local etc tinyproxy filters filter ) ) -> openw;
+my $tinyproxy_pid = path( qw( / usr local etc tinyproxy tinyproxy.pid ) ) -> slurp;
+# tinyproxy.conf: PidFile "/usr/local/etc/tinyproxy/tinyproxy.pid"
+
+for my $filter_file ( @filter_files ) {
+	$tinyproxy_filter_file -> print( $filter_file -> lines );
+}
+
+kill 'USR1', $tinyproxy_pid;
+
+__END__
+
+#! /bin/sh
+cat *.hosts > filters
+cat unsafe_search/* >> filters
+pkill --echo --signal USR1 tinyproxy

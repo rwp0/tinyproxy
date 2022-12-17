@@ -1,0 +1,73 @@
+#! /usr/bin/env perl
+
+use v5.36;
+
+use Getopt::Long qw( :config auto_help auto_version no_ignore_case );
+use System::Command;
+
+Getopt::Long::GetOptions(
+	\my %options,
+	'on|o',
+	'off|O',
+	'show|s',
+	'show-all|S'
+);
+
+my %proxy = (
+	mode   => 'auto', # default
+	schema => 'org.gnome.system.proxy',
+	host   => '127.0.0.1',
+	# port   => 3128, # squid
+	port   => 8888, # tinyproxy
+);
+
+if ( defined $options{off} ) {
+	$proxy{mode} = 'none';
+	System::Command -> new( 'gsettings', 'set', $proxy{schema}, 'mode', $proxy{mode} );
+	print System::Command -> new( 'gsettings', 'get', $proxy{schema}, 'mode' ) -> stdout -> getlines;
+}
+elsif ( defined $options{on} ) {
+	$proxy{mode} = 'manual';
+	System::Command -> new( 'gsettings', 'set', $proxy{schema}, 'mode', $proxy{mode} );
+	System::Command -> new( 'gsettings', 'set', join( '.', $proxy{schema}, 'http' ), 'host', $proxy{host} );
+	System::Command -> new( 'gsettings', 'set', join( '.', $proxy{schema}, 'port' ), 'host', $proxy{port} );
+	print System::Command -> new( 'gsettings', 'get', $proxy{schema}, 'mode' ) -> stdout -> getlines;
+}
+elsif ( defined $options{'show-all'} ) {
+	print System::Command -> new( 'gsettings', 'list-recursively', $proxy{schema} ) -> stdout -> getlines;
+}
+elsif ( defined $options{show} ) {
+	print System::Command -> new( 'gsettings', 'get', $proxy{schema}, 'mode' ) -> stdout -> getlines;
+	# show mode to be 'automatic' or 'manual'
+}
+
+=pod
+
+=head1 NAME
+
+proxy.gsettings.pl - manage GNOME proxy
+
+=head1 SYNOPSIS
+
+proxy.gsettings.pl -o
+
+proxy.gsettings.pl -O
+
+proxy.gsettings.pl -s
+
+=cut
+
+# qv. gsettings(1), misc/libglib2.0-bin
+
+# gsettings set org.gnome.system.proxy.https host 'proxy.localdomain.com'
+# gsettings set org.gnome.system.proxy.https port 8080
+
+
+# gsettings set org.gnome.system.proxy.ftp host 'proxy.localdomain.com'
+# gsettings set org.gnome.system.proxy.ftp port 8080
+# gsettings set org.gnome.system.proxy.socks host 'proxy.localdomain.com'
+# gsettings set org.gnome.system.proxy.socks port 8080
+#
+#
+
+# describe
